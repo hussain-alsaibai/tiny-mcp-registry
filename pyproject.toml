@@ -4,18 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tiny-mcp-registry"
-version = "0.1.0"
-authors = [
-  { name="hussain-alsaibai", email="hussain.alsaibai@gmail.com" },
-]
-description = "Zero-dependency MCP server discovery and health checker"
+version = "1.0.0"
+description = "MCP server discovery + health checks + latency probes"
 readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Hussain Al-Saibai", email = "hussain.alsaibai@gmail.com"}]
 requires-python = ">=3.8"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+keywords = ["mcp", "model-context-protocol", "discovery", "health-check", "registry"]
 
 [project.urls]
-"Homepage" = "https://github.com/hussain-alsaibai/tiny-mcp-registry"
+Homepage = "https://github.com/hussain-alsaibai/tiny-mcp-registry"
+Repository = "https://github.com/hussain-alsaibai/tiny-mcp-registry"
