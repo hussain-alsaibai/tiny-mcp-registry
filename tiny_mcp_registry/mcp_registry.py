@@ -26,7 +26,7 @@ import subprocess
 import os
 from typing import Any, Optional
 from dataclasses import dataclass, field, asdict
-from threading import Lock
+from threading import RLock
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -220,7 +220,7 @@ class MCPRegistry:
 
     def __init__(self):
         self._servers: dict[str, MCPServer] = {}
-        self._lock = Lock()
+        self._lock = RLock()
         self._checker = HealthChecker()
 
     def register(
@@ -391,12 +391,16 @@ class MCPRegistry:
 
     def export(self) -> dict:
         """Export registry as a serializable dict."""
+        # Snapshot under the lock, then build the payload outside it.
+        # Calling self.stats() while holding the lock used to self-deadlock:
+        # stats() re-acquired the same non-reentrant Lock.
         with self._lock:
-            return {
-                "exported_at": time.time(),
-                "servers": [s.to_dict() for s in self._servers.values()],
-                "stats": self.stats(),
-            }
+            servers = list(self._servers.values())
+        return {
+            "exported_at": time.time(),
+            "servers": [s.to_dict() for s in servers],
+            "stats": self.stats(),
+        }
 
     @staticmethod
     def from_dict(data: dict) -> MCPRegistry:

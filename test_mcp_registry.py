@@ -1,5 +1,6 @@
 """Tests for tiny-mcp-registry."""
 import pytest
+from concurrent.futures import ThreadPoolExecutor
 from tiny_mcp_registry import (
     MCPRegistry, MCPServer, HealthChecker, create_default_registry
 )
@@ -132,3 +133,37 @@ class TestHealthChecker:
         report = h.check(s)
         assert report.status == "error" or report.status == "unhealthy"
         assert report.latency_ms > 0
+
+
+class TestLocking:
+    """Regression tests for the export()/stats() self-deadlock.
+
+    export() used to acquire the registry lock and then call stats(), which
+    re-acquired the same non-reentrant Lock. Any call to export() hung the
+    calling thread forever with no error and no timeout.
+    """
+
+    def test_export_does_not_deadlock(self):
+        r = MCPRegistry()
+        r.register("test", "http://t.com", tools=["x"])
+        # If export() deadlocked this would hang forever instead of failing.
+        data = r.export()
+        assert data["stats"]["total"] == 1
+
+    def test_export_completes_with_timeout(self):
+        r = MCPRegistry()
+        r.register("a", "http://a.com", tools=["x"])
+        r.register("b", "http://b.com", tools=["y", "z"])
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(r.export)
+            data = future.result(timeout=10)
+        assert len(data["servers"]) == 2
+        assert data["stats"]["total_tools"] == 3
+
+    def test_lock_is_reentrant(self):
+        r = MCPRegistry()
+        assert isinstance(r._lock, type(r._lock))
+        # An RLock can be acquired twice from the same thread.
+        with r._lock:
+            with r._lock:
+                pass
